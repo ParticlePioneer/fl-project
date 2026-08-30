@@ -1,0 +1,40 @@
+# Base configuration for the Federated Credit Risk project.
+# Every run should point at this file (or an override of it) -- nothing
+# about client count, epsilon, rounds, or dataset path should ever be
+# hardcoded in src/.
+
+experiment:
+  name: "federated_credit_risk_baseline"
+  seed: 42
+
+data:
+  # Path to the cleaned dataset -- set once your friend delivers it.
+  # processed_path: "data/processed/lendingclub_clean.csv"
+  processed_path: "data/processed/synthetic_lendingclub.csv" #Test data path
+  target_column: "loan_status"        # confirm exact column name once dataset arrives
+  partition_column: "addr_state"      # non-IID split axis
+  fairness_column: "annual_inc_bracket"  # income-bracket fairness axis (derived column)
+
+federation:
+  num_clients: 5
+  num_rounds: 20
+  local_epochs: 1
+  batch_size: 32
+
+model:
+  type: "logistic_regression"   # later: "mlp"
+  input_dim: null                # set once feature count is known from EDA
+
+privacy:
+  strategy: "fixed"    # only 'fixed' implemented in current scope; 'adaptive' reserved for later
+  fixed:
+    epsilon: 4.0        # overridden per-run during the epsilon sweep
+    delta: null          # defaults to 1/dataset_size if left null
+  clipping_norm: 1.0
+
+tracking:
+  mlflow_tracking_uri: "file:./mlruns"
+  experiment_name: "fl-credit-risk"
+
+stats:
+  num_seeds: 5   # seeds to repeat each config over, for confidence intervals
