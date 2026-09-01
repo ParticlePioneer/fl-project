@@ -199,3 +199,58 @@ comparisons across the epsilon-sweep (Decision 13) and fairness analysis
 **Consequence:** Documented explicitly as a stated limitation/future-work
 item in the final report, not left as an unstated gap. Threshold stays fixed
 at 0.5 across every experiment for the full 8-week core scope.
+
+## 18. Column selection: 28 required + 2 conditional, out of 151 raw LendingClub columns
+**Decision:** Selected a specific 28-column feature/structural set (loan_amnt,
+term, int_rate, installment, grade, sub_grade, emp_length, home_ownership,
+annual_inc, verification_status, purpose, dti, delinq_2yrs, earliest_cr_line,
+fico_range_low, fico_range_high, inq_last_6mths, open_acc, pub_rec,
+revol_bal, revol_util, total_acc, mort_acc, pub_rec_bankruptcies, plus
+structural columns id, addr_state, issue_d, loan_status), with tot_cur_bal
+and bc_util as conditional inclusions pending null-rate check. Everything
+else (leakage columns, free text, joint/co-borrower fields, hardship/
+settlement fields) dropped.
+**Reasoning:** Avoids post-origination leakage columns (e.g. total_pymnt,
+recoveries, hardship fields) that wouldn't be known at loan-decision time in
+a real deployment -- keeping only features genuinely available at
+origination.
+
+## 19. Target label: loan_status filtered to Fully Paid / Charged Off + Default only
+**Decision:** Map `loan_status` to a binary `default` target using only
+`Charged Off` and `Default` as positive (1) and `Fully Paid` as negative (0).
+Rows with unresolved statuses (`Current`, `In Grace Period`, `Late (16-30
+days)`, `Late (31-120 days)`, "does not meet credit policy" variants) are
+dropped entirely, not mapped to either class.
+**Reasoning:** `Current` and other in-progress statuses represent loans that
+haven't finished their term -- labeling them as non-default would inject
+systematic label noise, since some fraction will still default later
+(a censoring problem). Dropping unresolved loans is the simpler correct fix
+given the project isn't using survival analysis. Flagged risk: this filter
+interacts with `issue_d`, since more recent originations near the 2018 cutoff
+are more likely to still be "Current" and get dropped, potentially skewing
+the final dataset toward older loans -- to be checked once real class
+balance and row counts are available.
+
+## 20. Feature engineering on selected columns before handoff
+**Decision:**
+- `term`: parsed from string ("36 months") to integer (36)
+- `emp_length`: mapped from string ("10+ years", "< 1 year") to an ordinal
+  integer scale (0-10); missing values treated as their own category, not
+  silently imputed
+- `earliest_cr_line`: converted to a derived `credit_history_months` feature
+  (issue_d minus earliest_cr_line in months), raw date column dropped
+- `fico_range_low` / `fico_range_high`: averaged into a single `fico_score`
+  feature, since the two bounds are nearly perfectly correlated with each
+  other and keeping both is redundant
+- `grade` dropped in favor of `sub_grade` only, since `sub_grade` is
+  finer-grained and `grade` is redundant information already contained
+  within it
+- `mort_acc`, `pub_rec_bankruptcies`, `revol_util`, `dti`: median imputation
+  for the (expected low) null rate
+- `tot_cur_bal`, `bc_util`: null rate to be checked before deciding whether
+  to impute or drop -- dropped if null rate exceeds ~15-20%
+**Reasoning:** Reduces redundant/correlated raw fields to cleaner derived
+features, avoids naive imputation on fields where "missing" itself carries
+signal (emp_length), and keeps the feature set model-ready without
+duplicated information that would inflate apparent feature importance
+without adding real predictive signal.
