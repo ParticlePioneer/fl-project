@@ -1,3 +1,8 @@
+# This File is to be run from root folder of the project.
+# It will download the dataset from Kaggle and 
+# preprocess it to create a clean dataset for further analysis.
+# The root folder as in Federated Learning not fl-project
+
 import pandas as pd
 import sys
 from pathlib import Path
