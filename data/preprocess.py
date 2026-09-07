@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 import subprocess
 # Downloading dataset
-RAW_DIR = Path("data/raw")
+RAW_DIR = Path("fl-project/data/raw")
 RAW_FILE = RAW_DIR / "accepted_2007_to_2018Q4.csv.gz"
 
 RAW_DIR.mkdir(parents=True, exist_ok=True)
@@ -47,9 +47,9 @@ for i, chunk in enumerate(pd.read_csv(RAW_FILE,
                   usecols=headers, low_memory=False, chunksize=500000)):
     print(f"Processing chunk {i+1}/5 with {len(chunk)} rows...")
     write_header = (i == 0)
-    chunk.to_csv("data/dataset.csv", index=False, mode='a', header=write_header)
+    chunk.to_csv("fl-project/data/dataset.csv", index=False, mode='a', header=write_header)
 
-df = pd.read_csv('data/dataset.csv', low_memory=False)
+df = pd.read_csv('fl-project/data/dataset.csv', low_memory=False)
 
 print("Dataset loaded as csv. Starting cleaning and preprocessing...")
 print("Initial dataset shape:", df.shape)
@@ -129,10 +129,10 @@ df['emp_length'] = (
     .fillna('-1')
     .astype(int)
 )
-file_path = Path("data/processed/synthetic_lendingclub.csv")
+file_path = Path("fl-project/data/processed/synthetic_lendingclub.csv")
 file_path.parent.mkdir(parents=True, exist_ok=True)
 df.to_csv(file_path, index=False)
-print("\nFile saved to data/processed/synthetic_lendingclub.csv")
+print("\nFile saved to fl-project/data/processed/synthetic_lendingclub.csv")
 df.shape
 print("\nClass Balance: ")
 df['issue_year'] = df['issue_d'].dt.year
