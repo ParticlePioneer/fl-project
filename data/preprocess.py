@@ -129,10 +129,10 @@ df['emp_length'] = (
     .fillna('-1')
     .astype(int)
 )
-file_path = Path("processed/synthetic_lendingclub.csv")
+file_path = Path("data/processed/synthetic_lendingclub.csv")
 file_path.parent.mkdir(parents=True, exist_ok=True)
 df.to_csv(file_path, index=False)
-print("\nFile saved to processed/synthetic_lendingclub.csv")
+print("\nFile saved to data/processed/synthetic_lendingclub.csv")
 df.shape
 print("\nClass Balance: ")
 df['issue_year'] = df['issue_d'].dt.year
